@@ -9,7 +9,12 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Pretendard', sans-serif; }</style>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .hide-scroll::-webkit-scrollbar { width: 4px; }
+        .hide-scroll::-webkit-scrollbar-track { background: transparent; }
+        .hide-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
 </head>
 <body class="bg-[#f8fafc]">
     <div id="root"></div>
@@ -122,6 +127,7 @@
             const [isNaming, setIsNaming] = useState(false);
             const [tempName, setTempName] = useState("");
             const [showResetConfirm, setShowResetConfirm] = useState(false);
+            const [hallOfFame, setHallOfFame] = useState([]);
 
             useEffect(() => {
                 try {
@@ -142,6 +148,9 @@
                         setTimerType(savedTimer.type);
                         setTimeLeft(diff);
                     }
+
+                    const savedHoF = JSON.parse(localStorage.getItem('decogochi_hof'));
+                    if (savedHoF) setHallOfFame(savedHoF);
                 } catch {
                     handleReset();
                 }
@@ -150,6 +159,10 @@
             useEffect(() => {
                 if (myMonster) localStorage.setItem('decogochi_my_monster', JSON.stringify(myMonster));
             }, [myMonster]);
+
+            useEffect(() => {
+                localStorage.setItem('decogochi_hof', JSON.stringify(hallOfFame));
+            }, [hallOfFame]);
 
             useEffect(() => {
                 if (!timerType || timeLeft <= 0) return;
@@ -162,17 +175,24 @@
 
             const handleReset = () => { localStorage.clear(); window.location.reload(); };
 
-            const exportData = () => {
+            const getExportCode = (monster) => {
+                const g = monster.genes;
+                const shortData = `${monster.name}|${g.bodyIndex}|${g.faceIndex}|${g.hue}|${g.saturation}`;
+                return btoa(unescape(encodeURIComponent(shortData)));
+            };
+
+            const copyCode = (code) => {
                 try {
-                    // JSON 전체 대신 필수 데이터만 문자열로 압축 (이름|body|face|hue|sat)
-                    const g = myMonster.genes;
-                    const shortData = `${myMonster.name}|${g.bodyIndex}|${g.faceIndex}|${g.hue}|${g.saturation}`;
-                    const data = btoa(unescape(encodeURIComponent(shortData)));
-                    
                     const tx = document.createElement("textarea");
-                    tx.value = data; document.body.appendChild(tx);
+                    tx.value = code; document.body.appendChild(tx);
                     tx.select(); document.execCommand('copy'); tx.remove();
                 } catch {}
+            };
+
+            const exportData = () => copyCode(getExportCode(myMonster));
+
+            const addToHoF = () => {
+                setHallOfFame(prev => [{ ...myMonster, id: Date.now() }, ...prev]);
             };
 
             const importData = () => {
@@ -234,7 +254,40 @@
             if (!myMonster) return null;
 
             return (
-                <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 text-slate-900">
+                <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row items-center lg:items-start justify-center p-4 lg:p-8 gap-6 text-slate-900">
+                    
+                    {/* 명예의 전당 (좌측) */}
+                    <div className="w-full max-w-sm bg-white rounded-[3rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col lg:h-[700px]">
+                        <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 px-2">
+                            <Icon name="Star" className="text-amber-400 fill-current" /> 명예의 전당
+                        </h2>
+                        <div className="flex-1 overflow-y-auto hide-scroll pr-1 space-y-3">
+                            {hallOfFame.length === 0 ? (
+                                <p className="text-center text-slate-400 text-sm py-10 font-bold">등록된 외형이 없습니다.</p>
+                            ) : (
+                                hallOfFame.map(item => (
+                                    <div key={item.id} className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex items-center gap-4 animate-in fade-in slide-in-from-left-4">
+                                        <div className="w-24 h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                                            <CharacterRenderer genes={item.genes} stage="adult" size={90} id={`hof-${item.id}`} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-slate-700 truncate text-base">{item.name}</p>
+                                        </div>
+                                        <div className="flex gap-1 shrink-0">
+                                            <button onClick={() => copyCode(getExportCode(item))} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-colors">
+                                                <Icon name="Share2" size={16} />
+                                            </button>
+                                            <button onClick={() => setHallOfFame(prev => prev.filter(h => h.id !== item.id))} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
+                                                <Icon name="Trash2" size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 메인 화면 (우측) */}
                     <div className="w-full max-w-sm bg-white rounded-[3rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 relative">
                         {/* Top Bar */}
                         <div className="flex justify-between items-center mb-6 px-2">
@@ -309,6 +362,9 @@
                                     )}
                                     <button onClick={exportData} className="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all">
                                         <Icon name="Share2" size={16} /> 데이터 내보내기 (복사)
+                                    </button>
+                                    <button onClick={addToHoF} className="w-full bg-amber-50 hover:bg-amber-100 text-amber-600 py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
+                                        <Icon name="Star" size={16} className="fill-current" /> 현재 외형 전당에 올리기
                                     </button>
                                 </>
                             )}
