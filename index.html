@@ -266,7 +266,7 @@
                     const babyGenes = {
                         bodyIndex: Math.random() > 0.5 ? p1.bodyIndex : p2.bodyIndex,
                         faceIndex: Math.random() > 0.5 ? p1.faceIndex : p2.faceIndex,
-                        hue: Math.floor(Math.random() * 360),
+                        hue: Math.floor(Math.random() * 360), // 태어날 때 랜덤 색상
                         saturation: 80,
                     };
                     const duration = 600; 
@@ -282,14 +282,27 @@
                 setMyMonster(prev => {
                     if (!prev || !prev.parents) return prev;
                     const [p1, p2] = prev.parents;
+                    
+                    // 유전자 상속 (몸, 얼굴 인덱스 등)
                     const adultGenes = { ...prev.genes };
-                    Object.keys(adultGenes).forEach(t => { 
-                        if (Math.random() > 0.5) adultGenes[t] = Math.random() > 0.5 ? p1[t] : p2[t]; 
+                    ['bodyIndex', 'faceIndex'].forEach(key => {
+                        if (Math.random() > 0.5) {
+                            adultGenes[key] = Math.random() > 0.5 ? p1[key] : p2[key];
+                        }
                     });
+
+                    // 색상 결정 로직: 50% 확률로 기존 유지, 50% 확률로 랜덤 변경
+                    if (Math.random() > 0.5) {
+                        adultGenes.hue = Math.floor(Math.random() * 360);
+                    }
+                    // else { adultGenes.hue = prev.genes.hue; } // 그대로 유지
+
                     setTimerType(null);
                     setTimeLeft(0);
                     localStorage.removeItem('decogochi_timer');
-                    return { ...prev, stage: 'adult', genes: adultGenes, name: ADULT_DATA[adultGenes.bodyIndex].name };
+
+                    // name: prev.name으로 설정하여 지어진 이름이 유지되도록 수정
+                    return { ...prev, stage: 'adult', genes: adultGenes, name: prev.name };
                 });
             };
 
