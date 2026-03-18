@@ -261,25 +261,27 @@
                         <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2 px-2">
                             <Icon name="Star" className="text-amber-400 fill-current" /> 명예의 전당
                         </h2>
-                        <div className="flex-1 overflow-y-auto hide-scroll pr-1 space-y-3">
+                        <div className="flex-1 overflow-y-auto hide-scroll pr-1 space-y-4">
                             {hallOfFame.length === 0 ? (
                                 <p className="text-center text-slate-400 text-sm py-10 font-bold">등록된 외형이 없습니다.</p>
                             ) : (
                                 hallOfFame.map(item => (
-                                    <div key={item.id} className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex items-center gap-4 animate-in fade-in slide-in-from-left-4">
-                                        <div className="w-24 h-24 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden shrink-0">
-                                            <CharacterRenderer genes={item.genes} stage="adult" size={90} id={`hof-${item.id}`} />
+                                    <div key={item.id} className="bg-slate-50 border border-slate-100 rounded-3xl p-4 flex flex-col gap-3 animate-in fade-in slide-in-from-left-4">
+                                        {/* 크게 키운 이미지 영역 */}
+                                        <div className="w-full h-40 bg-white rounded-2xl shadow-sm flex items-center justify-center overflow-hidden">
+                                            <CharacterRenderer genes={item.genes} stage="adult" size={140} id={`hof-${item.id}`} />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-slate-700 truncate text-base">{item.name}</p>
-                                        </div>
-                                        <div className="flex gap-1 shrink-0">
-                                            <button onClick={() => copyCode(getExportCode(item))} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-colors">
-                                                <Icon name="Share2" size={16} />
-                                            </button>
-                                            <button onClick={() => setHallOfFame(prev => prev.filter(h => h.id !== item.id))} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
-                                                <Icon name="Trash2" size={16} />
-                                            </button>
+                                        {/* 이미지 아래 이름 및 공유/삭제 버튼 */}
+                                        <div className="flex justify-between items-center px-1">
+                                            <p className="font-bold text-slate-700 truncate text-lg flex-1 pr-2">{item.name}</p>
+                                            <div className="flex gap-2 shrink-0">
+                                                <button onClick={() => copyCode(getExportCode(item))} className="p-2.5 bg-white text-slate-400 hover:text-blue-500 shadow-sm rounded-xl transition-all active:scale-95">
+                                                    <Icon name="Share2" size={18} />
+                                                </button>
+                                                <button onClick={() => setHallOfFame(prev => prev.filter(h => h.id !== item.id))} className="p-2.5 bg-white text-slate-400 hover:text-rose-500 shadow-sm rounded-xl transition-all active:scale-95">
+                                                    <Icon name="Trash2" size={18} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))
