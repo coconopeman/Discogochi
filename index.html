@@ -127,7 +127,10 @@
             const [isNaming, setIsNaming] = useState(false);
             const [tempName, setTempName] = useState("");
             const [showResetConfirm, setShowResetConfirm] = useState(false);
-            const [hallOfFame, setHallOfFame] = useState([]);
+            const [hallOfFame, setHallOfFame] = useState(() => {
+                try { return JSON.parse(localStorage.getItem('decogochi_hof')) || []; } 
+                catch { return []; }
+            });
 
             useEffect(() => {
                 try {
@@ -148,9 +151,6 @@
                         setTimerType(savedTimer.type);
                         setTimeLeft(diff);
                     }
-
-                    const savedHoF = JSON.parse(localStorage.getItem('decogochi_hof'));
-                    if (savedHoF) setHallOfFame(savedHoF);
                 } catch {
                     handleReset();
                 }
@@ -173,7 +173,22 @@
                 return () => clearInterval(timer);
             }, [timerType, timeLeft]);
 
-            const handleReset = () => { localStorage.clear(); window.location.reload(); };
+            // 새로고침 대신 상태만 초기화하여 명예의 전당 보존 및 깜빡임 제거
+            const handleReset = () => { 
+                localStorage.removeItem('decogochi_my_monster');
+                localStorage.removeItem('decogochi_timer');
+                
+                const idx = Math.floor(Math.random() * ADULT_DATA.length);
+                setMyMonster({
+                    name: ADULT_DATA[idx].name, stage: 'adult',
+                    genes: { bodyIndex: idx, faceIndex: idx, hue: Math.floor(Math.random() * 360), saturation: 80 }
+                });
+                
+                setTimerType(null);
+                setTimeLeft(0);
+                setPartnerMonster(null);
+                setShowResetConfirm(false);
+            };
 
             const getExportCode = (monster) => {
                 const g = monster.genes;
