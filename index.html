@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디코고치 (DecoGochi)</title>
+    <!-- 외부 라이브러리 로드 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (UMD) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Lucide 아이콘 컴포넌트 래퍼
+        const { Star, Egg, Sparkles, RefreshCw, Trash2, Share2, LogIn, Clock, ChevronRight } = {
+            Star: (props) => <i data-lucide="star" {...props}></i>,
+            Egg: (props) => <i data-lucide="egg" {...props}></i>,
+            Sparkles: (props) => <i data-lucide="sparkles" {...props}></i>,
+            RefreshCw: (props) => <i data-lucide="refresh-cw" {...props}></i>,
+            Trash2: (props) => <i data-lucide="trash-2" {...props}></i>,
+            Share2: (props) => <i data-lucide="share-2" {...props}></i>,
+            LogIn: (props) => <i data-lucide="log-in" {...props}></i>,
+            Clock: (props) => <i data-lucide="clock" {...props}></i>,
+            ChevronRight: (props) => <i data-lucide="chevron-right" {...props}></i>
+        };
+
+        // --- 데이터 정의 (Canvas 코드 복사) ---
+        const JUNIOR_DATA = [
+            { name: "갈대", body: "https://i.imgur.com/kkJcH4l.png", face: "https://i.imgur.com/CjyNaZH.png", faceOffset: { x: 0.2, y: -1.5, scale: 1 } },
+            { name: "더치", body: "https://i.imgur.com/DA5yEFP.png", face: "https://i.imgur.com/cq8lMXV.png", faceOffset: { x: 0.2, y: 1.9, scale: 1 } },
+            { name: "뫄", body: "https://i.imgur.com/rulk05g.png", face: "https://i.imgur.com/SqG0Zn7.png", faceOffset: { x: 0.2, y: 1.9, scale: 1 } },
+            { name: "병태", body: "https://i.imgur.com/9ZVVixI.png", face: "https://i.imgur.com/U46n71w.png", faceOffset: { x: -0.1, y: 1.2, scale: 1 } },
+            { name: "볼복", body: "https://i.imgur.com/na7UzhJ.png", face: "https://i.imgur.com/Mq8icFI.png", faceOffset: { x: -0.5, y: 0.1, scale: 1.4 } },
+            { name: "쪽파", body: "https://i.imgur.com/5OtkS3n.png", face: "https://i.imgur.com/tYHLmbH.png", faceOffset: { x: 0.9, y: 1.4, scale: 1.4 } },
+            { name: "빠다", body: "https://i.imgur.com/JdQLMSv.png", face: "https://i.imgur.com/dpSc0Js.png", faceOffset: { x: -0.5, y: -3.4, scale: 1.4 } },
+            { name: "부엉", body: "https://i.imgur.com/VktaG9C.png", face: "https://i.imgur.com/9q4v6Fy.png", faceOffset: { x: 1.1, y: 0.3, scale: 1.4 } },
+            { name: "폼식", body: "https://i.imgur.com/JvRVLDP.png", face: "https://i.imgur.com/cjdlqHU.png", faceOffset: { x: 0.9, y: -0.9, scale: 1.4 } }
+        ];
+
+        const ADULT_DATA = [
+            { name: "갈대", body: "https://i.imgur.com/0eJ7nlh.png", face: "https://i.imgur.com/aA22ZF6.png", acc: "", faceOffset: {"x":-5.1,"y":1.4,"scale":1.2}, accOffset: {"x":0,"y":0,"scale":1} },
+            { name: "더치", body: "https://i.imgur.com/Urn822x.png", face: "https://i.imgur.com/RffUmVz.png", acc: "https://i.imgur.com/EU61ZUd.png", faceOffset: {"x":-0.5,"y":1.4,"scale":1.2}, accOffset: {"x":0,"y":0,"scale":1.0} },
+            { name: "뫄식", body: "https://i.imgur.com/r9ZNExr.png", face: "https://i.imgur.com/3Dhh0zf.png", acc: "", faceOffset: {"x":1.1,"y":0.9,"scale":1.6}, accOffset: {"x":0,"y":0,"scale":1} },
+            { name: "병태", body: "https://i.imgur.com/yaBZRGJ.png", face: "https://i.imgur.com/O9mjZ2.png", acc: "", faceOffset: {"x":-0.5,"y":0.7,"scale":1.5}, accOffset: {"x":0,"y":0,"scale":1} },
+            { name: "볼복", body: "https://i.imgur.com/zMSAP6x.png", face: "https://i.imgur.com/n7JCI43.png", acc: "", faceOffset: {"x":-0.9,"y":-2.4,"scale":1.5}, accOffset: {"x":0,"y":0,"scale":1} },
+            { name: "쪽파", body: "https://i.imgur.com/DO43l3O.png", face: "https://i.imgur.com/xEFZUcL.png", acc: "", faceOffset: {"x":0.7,"y":-0.7,"scale":1.5}, accOffset: {"x":0,"y":0,"scale":1} },
+            { name: "빠다", body: "https://i.imgur.com/VSPomTp.png", face: "https://i.imgur.com/0nnlmeg.png", acc: "", faceOffset: {"x":1.2,"y":-1.8,"scale":1.5}, accOffset: {"x":0,"y":0,"scale":1} },
+            { name: "부엉", body: "https://i.imgur.com/3wOR5DQ.png", face: "https://i.imgur.com/ydfuHlt.png", acc: "", faceOffset: {"x":-1.1,"y":-0.1,"scale":1.5}, accOffset: {"x":0,"y":0,"scale":1} },
+            { name: "폼식", body: "https://i.imgur.com/xNhFh58.png", face: "https://i.imgur.com/JXrWSQQ.png", acc: "https://i.imgur.com/JPg8I8K.png", faceOffset: {"x":-0.1,"y":-0.7,"scale":1.8}, accOffset: {"x":0,"y":0.1,"scale":1.1} }
+        ];
+
+        const hsvToHex = (h, s, v) => {
+            s /= 100; v /= 100;
+            let c = v * s;
+            let x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+            let m = v - c;
+            let r = 0, g = 0, b = 0;
+            if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+            else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+            else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+            else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+            else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+            else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+            r = Math.round((r + m) * 255).toString(16).padStart(2, '0');
+            g = Math.round((g + m) * 255).toString(16).padStart(2, '0');
+            b = Math.round((b + m) * 255).toString(16).padStart(2, '0');
+            return `#${r}${g}${b}`;
+        };
+
+        const CharacterRenderer = ({ genes, stage, size = 200, id }) => {
+            const isEgg = stage === "egg";
+            const isBaby = stage === "baby";
+            const dataSet = isBaby ? JUNIOR_DATA : ADULT_DATA;
+            const bodyData = dataSet[genes.bodyIndex];
+            const faceImg = dataSet[genes.faceIndex].face;
+            const accImg = !isBaby && bodyData.acc ? bodyData.acc : null;
+            const faceConf = bodyData.faceOffset;
+            const accConf = !isBaby ? bodyData.accOffset : null;
+
+            const displaySaturation = isBaby ? genes.saturation * 0.2 : genes.saturation * 0.5;
+            const bodyColor = hsvToHex(genes.hue, displaySaturation, 95);
+            const filterId = `multiply-filter-${id}`;
+
+            React.useEffect(() => {
+                lucide.createIcons();
+            }, [stage, genes]);
+
+            if (isEgg) {
+                return (
+                    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+                        <img 
+                            src="https://i.imgur.com/WFsA2pQ.png" 
+                            alt="Egg" 
+                            style={{ width: '70%', height: '70%', objectFit: 'contain' }}
+                        />
+                    </div>
+                );
+            }
+
+            return (
+                <div className="relative inline-block" style={{ width: size, height: size }}>
+                    <svg viewBox="0 0 50 50" className="w-full h-full drop-shadow-xl overflow-visible">
+                        <defs>
+                            <filter id={filterId}>
+                                <feFlood floodColor={bodyColor} result="flood" />
+                                <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
+                                <feBlend in="colored" in2="SourceGraphic" mode="multiply" />
+                            </filter>
+                        </defs>
+                        <g transform="translate(0, 0)">
+                            <g filter={`url(#${filterId})`}>
+                                <image href={bodyData.body} x="0" y="0" width="50" height="50" preserveAspectRatio="xMidYMid meet" />
+                            </g>
+                            {accImg && accConf && (
+                                <g transform={`translate(${accConf.x} ${accConf.y}) scale(${accConf.scale})`} style={{ transformOrigin: '25px 25px' }}>
+                                    <image href={accImg} x="0" y="0" width="50" height="50" preserveAspectRatio="xMidYMid meet" />
+                                </g>
+                            )}
+                            <g transform={`translate(${faceConf.x} ${faceConf.y}) scale(${faceConf.scale})`} style={{ transformOrigin: '25px 25px' }}>
+                                <image href={faceImg} x="10" y="10" width="30" height="30" preserveAspectRatio="xMidYMid meet" />
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [myMonster, setMyMonster] = React.useState(null);
+            const [partnerMonster, setPartnerMonster] = React.useState(null);
+            const [importText, setImportText] = React.useState("");
+            const [timeLeft, setTimeLeft] = React.useState(0); 
+            const [timerType, setTimerType] = React.useState(null); 
+            const [isNaming, setIsNaming] = React.useState(false);
+            const [tempName, setTempName] = React.useState("");
+
+            React.useEffect(() => {
+                const saved = localStorage.getItem('decogochi_my_monster');
+                if (saved) {
+                    setMyMonster(JSON.parse(saved));
+                } else {
+                    const idx = Math.floor(Math.random() * ADULT_DATA.length);
+                    const initial = {
+                        name: ADULT_DATA[idx].name,
+                        stage: 'adult',
+                        genes: {
+                            bodyIndex: idx,
+                            faceIndex: idx,
+                            hue: Math.floor(Math.random() * 360),
+                            saturation: 80,
+                        }
+                    };
+                    setMyMonster(initial);
+                }
+            }, []);
+
+            React.useEffect(() => {
+                if (myMonster) {
+                    localStorage.setItem('decogochi_my_monster', JSON.stringify(myMonster));
+                }
+                lucide.createIcons();
+            }, [myMonster]);
+
+            React.useEffect(() => {
+                if (timeLeft <= 0) return;
+                const timer = setInterval(() => {
+                    setTimeLeft(prev => prev - 1);
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [timeLeft]);
+
+            const formatTime = (seconds) => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                return `${m}:${s < 10 ? '0' : ''}${s}`;
+            };
+
+            const exportData = () => {
+                try {
+                    const data = btoa(unescape(encodeURIComponent(JSON.stringify(myMonster))));
+                    const textArea = document.createElement("textarea");
+                    textArea.value = data;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert("내 캐릭터 데이터가 클립보드에 복사되었습니다!");
+                } catch (err) {
+                    alert("데이터 복사 중 오류가 발생했습니다.");
+                }
+            };
+
+            const importData = () => {
+                try {
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(importText))));
+                    if (decoded.stage !== 'adult') {
+                        alert("성인 캐릭터 데이터만 불러올 수 있습니다.");
+                        return;
+                    }
+                    setPartnerMonster(decoded);
+                    setImportText("");
+                } catch (e) {
+                    alert("유효하지 않은 데이터입니다.");
+                }
+            };
+
+            const confirmBreeding = () => {
+                if (!tempName.trim()) return;
+                const p1 = myMonster.genes;
+                const p2 = partnerMonster.genes;
+                const egg = {
+                    name: tempName,
+                    stage: 'egg',
+                    genes: p1,
+                    parents: [p1, p2]
+                };
+                setMyMonster(egg);
+                setPartnerMonster(null);
+                setTimerType('hatch');
+                setTimeLeft(300); // 5분
+                setIsNaming(false);
+                setTempName("");
+            };
+
+            const handleHatch = () => {
+                const [p1, p2] = myMonster.parents;
+                const babyGenes = {
+                    bodyIndex: Math.random() > 0.5 ? p1.bodyIndex : p2.bodyIndex,
+                    faceIndex: Math.random() > 0.5 ? p1.faceIndex : p2.faceIndex,
+                    hue: Math.floor(Math.random() * 360),
+                    saturation: 80,
+                };
+                setMyMonster({ ...myMonster, stage: 'baby', genes: babyGenes, name: `${myMonster.name}` });
+                setTimerType('grow');
+                setTimeLeft(600); // 10분
+            };
+
+            const handleGrow = () => {
+                const [p1, p2] = myMonster.parents;
+                const adultGenes = { ...myMonster.genes };
+                Object.keys(adultGenes).forEach(trait => {
+                    if (Math.random() > 0.5) adultGenes[trait] = Math.random() > 0.5 ? p1[trait] : p2[trait];
+                });
+                setMyMonster({ ...myMonster, stage: 'adult', genes: adultGenes, name: ADULT_DATA[adultGenes.bodyIndex].name });
+                setTimerType(null);
+                setTimeLeft(0);
+            };
+
+            if (!myMonster) return null;
+
+            return (
+                <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-center p-6 font-sans select-none">
+                    <div className="w-full max-w-md bg-white rounded-[3rem] p-8 shadow-xl border border-slate-200 relative overflow-hidden">
+                        <div className="text-center mb-10">
+                            <h1 className="text-2xl font-black tracking-tight text-blue-600 flex items-center justify-center gap-2">
+                                <Sparkles size="22" className="fill-blue-600" /> 디코고치
+                            </h1>
+                            <p className="text-slate-400 text-[10px] mt-1 uppercase font-black tracking-[0.2em]">Digital Companion</p>
+                        </div>
+
+                        <div className="flex flex-col items-center justify-center py-12 bg-slate-50/80 rounded-[2.5rem] mb-8 relative border border-slate-100 shadow-inner">
+                            <CharacterRenderer genes={myMonster.genes} stage={myMonster.stage} id="main" size={220} />
+                            <div className="mt-8 text-center">
+                                <h2 className="text-2xl font-black text-slate-800">{myMonster.name}</h2>
+                                <div className="flex items-center justify-center gap-2 mt-3">
+                                    <span className={`text-[10px] px-3 py-1 rounded-full font-black border ${
+                                        myMonster.stage === 'adult' ? 'border-blue-500 text-blue-500 bg-blue-50' :
+                                        myMonster.stage === 'baby' ? 'border-green-500 text-green-500 bg-green-50' : 'border-amber-500 text-amber-500 bg-amber-50'
+                                    }`}>
+                                        {myMonster.stage.toUpperCase()}
+                                    </span>
+                                    {timeLeft > 0 && (
+                                        <span className="text-[10px] bg-slate-200 text-slate-600 px-3 py-1 rounded-full font-black flex items-center gap-1">
+                                            <Clock size="10" /> {formatTime(timeLeft)}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {timeLeft === 0 && timerType === 'hatch' && (
+                                <button onClick={handleHatch} className="absolute -bottom-5 bg-amber-500 hover:bg-amber-400 text-white font-black px-8 py-3 rounded-2xl shadow-lg transition-all active:scale-95">
+                                    부화하기!
+                                </button>
+                            )}
+                            {timeLeft === 0 && timerType === 'grow' && (
+                                <button onClick={handleGrow} className="absolute -bottom-5 bg-green-500 hover:bg-green-400 text-white font-black px-8 py-3 rounded-2xl shadow-lg transition-all active:scale-95">
+                                    성장하기!
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="space-y-4">
+                            {myMonster.stage === 'adult' && !timerType && (
+                                <>
+                                    {partnerMonster ? (
+                                        <div className="bg-blue-50 border border-blue-100 p-4 rounded-[2rem] flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+                                            <div className="bg-white p-2 rounded-2xl shadow-sm">
+                                                <CharacterRenderer genes={partnerMonster.genes} stage="adult" size={60} id="partner" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-[9px] text-blue-500 font-black uppercase mb-0.5">Partner Ready</p>
+                                                <p className="font-bold text-slate-700">{partnerMonster.name}</p>
+                                            </div>
+                                            <button onClick={() => setIsNaming(true)} className="bg-blue-600 hover:bg-blue-500 text-white p-3.5 rounded-2xl shadow-md transition-all active:scale-90">
+                                                <Star size="20" fill="white" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2 bg-slate-100 p-1.5 rounded-[1.8rem]">
+                                            <input type="text" value={importText} onChange={(e) => setImportText(e.target.value)} placeholder="친구 코드 입력..." className="flex-1 bg-transparent border-none rounded-2xl px-4 py-3 text-xs focus:outline-none placeholder:text-slate-400 font-medium" />
+                                            <button onClick={importData} className="bg-white text-slate-600 hover:text-blue-600 px-4 rounded-2xl shadow-sm transition-all active:scale-95 font-black text-xs">
+                                                <LogIn size="18" />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-3 mt-4">
+                                        <button onClick={exportData} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-[1.5rem] text-xs font-black flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
+                                            <Share2 size="14" /> 데이터 내보내기
+                                        </button>
+                                        <button onClick={() => { if(confirm("내 캐릭터를 초기화하시겠습니까?")) { localStorage.clear(); window.location.reload(); } }} className="bg-slate-200 hover:bg-rose-100 text-slate-400 hover:text-rose-500 px-5 rounded-[1.5rem] transition-all">
+                                            <Trash2 size="16" />
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                            {timerType && (
+                                <div className="text-center p-5 bg-slate-100 rounded-[2rem] border border-slate-200">
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.1em] mb-1">
+                                        {timerType === 'hatch' ? "부화까지 남은 시간" : "최종 성장까지 남은 시간"}
+                                    </p>
+                                    <p className="text-xl font-black text-blue-600">{formatTime(timeLeft)}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {isNaming && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+                            <div className="bg-white w-full max-w-xs p-8 rounded-[3rem] shadow-2xl text-center border border-slate-100">
+                                <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-100 shadow-inner">
+                                    <img src="https://i.imgur.com/WFsA2pQ.png" alt="New Egg" className="w-16 h-16 object-contain" />
+                                </div>
+                                <h3 className="text-xl font-black mb-6">알의 이름 짓기</h3>
+                                <input autoFocus type="text" maxLength={10} value={tempName} onChange={(e) => setTempName(e.target.value)} className="w-full bg-slate-100 border-none rounded-2xl px-4 py-4 text-center mb-6 focus:ring-2 focus:ring-blue-500 transition-all font-bold" placeholder="이름을 입력하세요" />
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsNaming(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl text-xs font-black">취소</button>
+                                    <button onClick={confirmBreeding} className="flex-1 bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-lg shadow-blue-200">알 만들기</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
