@@ -164,7 +164,11 @@
 
             const exportData = () => {
                 try {
-                    const data = btoa(unescape(encodeURIComponent(JSON.stringify(myMonster))));
+                    // JSON 전체 대신 필수 데이터만 문자열로 압축 (이름|body|face|hue|sat)
+                    const g = myMonster.genes;
+                    const shortData = `${myMonster.name}|${g.bodyIndex}|${g.faceIndex}|${g.hue}|${g.saturation}`;
+                    const data = btoa(unescape(encodeURIComponent(shortData)));
+                    
                     const tx = document.createElement("textarea");
                     tx.value = data; document.body.appendChild(tx);
                     tx.select(); document.execCommand('copy'); tx.remove();
@@ -174,8 +178,19 @@
             const importData = () => {
                 try {
                     if (!importText) return;
-                    const decoded = JSON.parse(decodeURIComponent(escape(atob(importText))));
-                    if (decoded.stage === 'adult') { setPartnerMonster(decoded); setImportText(""); }
+                    const decoded = decodeURIComponent(escape(atob(importText)));
+                    
+                    if (decoded.includes('|')) { // 새 압축 포맷 파싱
+                        const p = decoded.split('|');
+                        setPartnerMonster({
+                            name: p[0], stage: 'adult',
+                            genes: { bodyIndex: +p[1], faceIndex: +p[2], hue: +p[3], saturation: +p[4] }
+                        });
+                        setImportText("");
+                    } else { // 기존 JSON 포맷 하위 호환
+                        const parsed = JSON.parse(decoded);
+                        if (parsed.stage === 'adult') { setPartnerMonster(parsed); setImportText(""); }
+                    }
                 } catch {}
             };
 
@@ -195,15 +210,17 @@
                     const isGrow = timerType === 'grow';
                     const nextStage = isGrow ? 'adult' : 'baby';
                     
+                    const r = Math.random();
                     const genes = isGrow ? { ...prev.genes } : {
                         bodyIndex: Math.random() > 0.5 ? p1.bodyIndex : p2.bodyIndex,
                         faceIndex: Math.random() > 0.5 ? p1.faceIndex : p2.faceIndex,
-                        hue: Math.floor(Math.random() * 360), saturation: 80
+                        hue: r < 0.3 ? p1.hue : r < 0.6 ? p2.hue : Math.floor(Math.random() * 360),
+                        saturation: 80
                     };
 
                     if (isGrow) {
                         ['bodyIndex', 'faceIndex'].forEach(k => Math.random() > 0.5 && (genes[k] = Math.random() > 0.5 ? p1[k] : p2[k]));
-                        if (Math.random() > 0.5) genes.hue = Math.floor(Math.random() * 360);
+                        if (Math.random() < 0.3) genes.hue = Math.floor(Math.random() * 360);
                         setTimerType(null); setTimeLeft(0); localStorage.removeItem('decogochi_timer');
                     } else {
                         const duration = 600;
@@ -236,9 +253,11 @@
                         <div className="relative aspect-square bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center mb-6 border border-slate-100 shadow-inner overflow-hidden">
                             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
                             
-                            <CharacterRenderer genes={myMonster.genes} stage={myMonster.stage} id="main" size={240} />
+                            <div className="mb-8">
+                                <CharacterRenderer genes={myMonster.genes} stage={myMonster.stage} id="main" size={240} />
+                            </div>
                             
-                            <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1">
+                            <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-1">
                                 <h2 className="text-xl font-black text-slate-800 tracking-tight">{myMonster.name}</h2>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
