@@ -1,388 +1,502 @@
-import React, { useState, useEffect } from 'react';
-import { Star, Egg, Sparkles, RefreshCw, Trash2, Share2, LogIn, Clock, ChevronRight, RotateCcw } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디코고치 - Decogochi</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#f8fafc]">
+    <div id="root"></div>
 
-// --- Helpers ---
-const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-};
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, Fragment } = React;
 
-// --- Data Definitions (제공해주신 좌표 적용) ---
-const JUNIOR_DATA = [
-    { name: "갈대", body: "https://i.imgur.com/kkJcH4l.png", face: "https://i.imgur.com/7fAGnJj.png", faceRect: {"x":20.5,"y":16.5,"w":8.4,"h":10} },
-    { name: "더치", body: "https://i.imgur.com/DA5yEFP.png", face: "https://i.imgur.com/22xba8J.png", faceRect: {"x":19.7,"y":23.6,"w":10,"h":6.7} },
-    { name: "뫄식", body: "https://i.imgur.com/rulk05g.png", face: "https://i.imgur.com/eyfyIyH.png", faceRect: {"x":20.1,"y":22.3,"w":10.3,"h":7.1} },
-    { name: "병태", body: "https://i.imgur.com/9ZVVixI.png", face: "https://i.imgur.com/TqC5aNb.png", faceRect: {"x":17.1,"y":21.8,"w":12.8,"h":11} },
-    { name: "볼복", body: "https://i.imgur.com/na7UzhJ.png", face: "https://i.imgur.com/o0KF6FS.png", faceRect: {"x":19,"y":19.5,"w":13.6,"h":11.4} },
-    { name: "쪽파", body: "https://i.imgur.com/5OtkS3n.png", face: "https://i.imgur.com/SFbRHRU.png", faceRect: {"x":18.9,"y":19.7,"w":12.6,"h":10.9} },
-    { name: "빠다", body: "https://i.imgur.com/JdQLMSv.png", face: "https://i.imgur.com/r5qlEk4.png", faceRect: {"x":17.5,"y":17.7,"w":14.2,"h":8.3} },
-    { name: "부엉", body: "https://i.imgur.com/VktaG9C.png", face: "https://i.imgur.com/CzM09fh.png", faceRect: {"x":20.6,"y":21.7,"w":9.9,"h":7.8} },
-    { name: "폼식", body: "https://i.imgur.com/JvRVLDP.png", face: "https://i.imgur.com/e3HdU6H.png", faceRect: {"x":16.3,"y":19,"w":16.9,"h":13.7} }
-];
+        // --- Icons (Fixed with Fragments) ---
+        const Icon = ({ name, size = 18, className = "" }) => {
+            const icons = {
+                Star: <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>,
+                Sparkles: (
+                    <Fragment>
+                        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                        <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+                    </Fragment>
+                ),
+                RotateCcw: (
+                    <Fragment>
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </Fragment>
+                ),
+                Clock: (
+                    <Fragment>
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </Fragment>
+                ),
+                Trash2: (
+                    <Fragment>
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        <line x1="10" x2="10" y1="11" y2="17"/>
+                        <line x1="14" x2="14" y1="11" y2="17"/>
+                    </Fragment>
+                ),
+                X: (
+                    <Fragment>
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </Fragment>
+                ),
+                LogIn: (
+                    <Fragment>
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" x2="3" y1="12" y2="12"/>
+                    </Fragment>
+                ),
+                Share2: (
+                    <Fragment>
+                        <circle cx="18" cy="5" r="3"/>
+                        <circle cx="6" cy="12" r="3"/>
+                        <circle cx="18" cy="19" r="3"/>
+                        <line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/>
+                        <line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>
+                    </Fragment>
+                )
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name]}
+                </svg>
+            );
+        };
 
-const ADULT_DATA = [
-    { name: "갈대", body: "https://i.imgur.com/0eJ7nlh.png", face: "https://i.imgur.com/Z3YOTF5.png", faceRect: {"x":1,"y":15.3,"w":16.9,"h":16.1} },
-    { name: "더치", body: "https://i.imgur.com/Urn822x.png", face: "https://i.imgur.com/rYFBjCg.png", faceRect: {"x":9.3,"y":16.1,"w":28.4,"h":16.7} },
-    { name: "뫄식", body: "https://i.imgur.com/r9ZNExr.png", face: "https://i.imgur.com/cOQ26r9.png", faceRect: {"x":15,"y":22.3,"w":16.9,"h":10.4} },
-    { name: "병태", body: "https://i.imgur.com/yaBZRGJ.png", face: "https://i.imgur.com/x8TY17f.png", faceRect: {"x":12.5,"y":15,"w":22.1,"h":15} },
-    { name: "볼복", body: "https://i.imgur.com/zMSAP6x.png", face: "https://i.imgur.com/MO5iMmt.png", faceRect: {"x":14.7,"y":13.1,"w":21.5,"h":17.2} },
-    { name: "쪽파", body: "https://i.imgur.com/DO43l3O.png", face: "https://i.imgur.com/CNcjx5t.png", faceRect: {"x":18.7,"y":9.7,"w":13.4,"h":11.5} },
-    { name: "빠다", body: "https://i.imgur.com/VSPomTp.png", face: "https://i.imgur.com/tbn0MA4.png", faceRect: {"x":14.9,"y":10.2,"w":22.5,"h":14.1} },
-    { name: "부엉", body: "https://i.imgur.com/3wOR5DQ.png", face: "https://i.imgur.com/JqPL4kE.png", faceRect: {"x":10,"y":21.5,"w":25.1,"h":13.9} },
-    { name: "폼식", body: "https://i.imgur.com/xNhFh58.png", face: "https://i.imgur.com/DZPqRtJ.png", faceRect: {"x":15.2,"y":19,"w":19.6,"h":14.2} }
-];
+        // --- Helpers ---
+        const formatTime = (seconds) => {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        };
 
-const hsvToHex = (h, s, v) => {
-    s /= 100; v /= 100;
-    let c = v * s;
-    let x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    let m = v - c;
-    let r = 0, g = 0, b = 0;
-    if (0 <= h && h < 60) { r = c; g = x; b = 0; }
-    else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
-    else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
-    else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
-    else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
-    else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
-    r = Math.round((r + m) * 255).toString(16).padStart(2, '0');
-    g = Math.round((g + m) * 255).toString(16).padStart(2, '0');
-    b = Math.round((b + m) * 255).toString(16).padStart(2, '0');
-    return `#${r}${g}${b}`;
-};
+        const hsvToHex = (h, s, v) => {
+            s /= 100; v /= 100;
+            let c = v * s;
+            let x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+            let m = v - c;
+            let r = 0, g = 0, b = 0;
+            if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+            else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+            else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+            else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+            else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+            else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+            r = Math.round((r + m) * 255).toString(16).padStart(2, '0');
+            g = Math.round((g + m) * 255).toString(16).padStart(2, '0');
+            b = Math.round((b + m) * 255).toString(16).padStart(2, '0');
+            return `#${r}${g}${b}`;
+        };
 
-const CharacterRenderer = ({ genes, stage, size = 200, id }) => {
-    if (!genes || typeof genes.bodyIndex === 'undefined') return <div className="text-xs text-red-400">데이터 오류</div>;
-    
-    const isEgg = stage === "egg";
-    const isBaby = stage === "baby";
-    const dataSet = isBaby ? JUNIOR_DATA : ADULT_DATA;
-    
-    const bodyData = dataSet[genes.bodyIndex] || dataSet[0];
-    const faceData = dataSet[genes.faceIndex] || dataSet[0];
-    
-    const rect = bodyData.faceRect || {x: 10, y: 10, w: 30, h: 30};
-    const faceImg = faceData.face;
-    
-    const displaySaturation = isBaby ? genes.saturation * 0.2 : genes.saturation * 0.5;
-    const bodyColor = hsvToHex(genes.hue, displaySaturation, 95);
-    const filterId = `multiply-filter-${id}-${stage}`;
+        // --- Data ---
+        const JUNIOR_DATA = [
+            { name: "갈대", body: "https://i.imgur.com/kkJcH4l.png", face: "https://i.imgur.com/7fAGnJj.png", faceRect: { "x": 20.5, "y": 16.5, "w": 8.4, "h": 10 } },
+            { name: "더치", body: "https://i.imgur.com/DA5yEFP.png", face: "https://i.imgur.com/22xba8J.png", faceRect: { "x": 19.7, "y": 23.6, "w": 10, "h": 6.7 } },
+            { name: "뫄식", body: "https://i.imgur.com/rulk05g.png", face: "https://i.imgur.com/eyfyIyH.png", faceRect: { "x": 20.1, "y": 22.3, "w": 10.3, "h": 7.1 } },
+            { name: "병태", body: "https://i.imgur.com/9ZVVixI.png", face: "https://i.imgur.com/TqC5aNb.png", faceRect: { "x": 17.1, "y": 21.8, "w": 12.8, "h": 11 } },
+            { name: "볼복", body: "https://i.imgur.com/na7UzhJ.png", face: "https://i.imgur.com/o0KF6FS.png", faceRect: { "x": 19, "y": 19.5, "w": 13.6, "h": 11.4 } },
+            { name: "쪽파", body: "https://i.imgur.com/5OtkS3n.png", face: "https://i.imgur.com/SFbRHRU.png", faceRect: { "x": 18.9, "y": 19.7, "w": 12.6, "h": 10.9 } },
+            { name: "빠다", body: "https://i.imgur.com/JdQLMSv.png", face: "https://i.imgur.com/r5qlEk4.png", faceRect: { "x": 17.5, "y": 17.7, "w": 14.2, "h": 8.3 } },
+            { name: "부엉", body: "https://i.imgur.com/VktaG9C.png", face: "https://i.imgur.com/CzM09fh.png", faceRect: { "x": 20.6, "y": 21.7, "w": 9.9, "h": 7.8 } },
+            { name: "폼식", body: "https://i.imgur.com/JvRVLDP.png", face: "https://i.imgur.com/e3HdU6H.png", faceRect: { "x": 16.3, "y": 19, "w": 16.9, "h": 13.7 } }
+        ];
 
-    if (isEgg) {
-        return (
-            <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-                <img 
-                    src="https://i.imgur.com/WFsA2pQ.png" 
-                    alt="Egg" 
-                    className="w-[70%] h-[70%] object-contain"
-                />
-            </div>
-        );
-    }
+        const ADULT_DATA = [
+            { name: "갈대", body: "https://i.imgur.com/0eJ7nlh.png", face: "https://i.imgur.com/Z3YOTF5.png", faceRect: { "x": 1, "y": 15.3, "w": 16.9, "h": 16.1 } },
+            { name: "더치", body: "https://i.imgur.com/Urn822x.png", face: "https://i.imgur.com/rYFBjCg.png", faceRect: { "x": 9.3, "y": 16.1, "w": 28.4, "h": 16.7 } },
+            { name: "뫄식", body: "https://i.imgur.com/r9ZNExr.png", face: "https://i.imgur.com/cOQ26r9.png", faceRect: { "x": 15, "y": 22.3, "w": 16.9, "h": 10.4 } },
+            { name: "병태", body: "https://i.imgur.com/yaBZRGJ.png", face: "https://i.imgur.com/x8TY17f.png", faceRect: { "x": 12.5, "y": 15, "w": 22.1, "h": 15 } },
+            { name: "볼복", body: "https://i.imgur.com/zMSAP6x.png", face: "https://i.imgur.com/MO5iMmt.png", faceRect: { "x": 14.7, "y": 13.1, "w": 21.5, "h": 17.2 } },
+            { name: "쪽파", body: "https://i.imgur.com/DO43l3O.png", face: "https://i.imgur.com/CNcjx5t.png", faceRect: { "x": 18.7, "y": 9.7, "w": 13.4, "h": 11.5 } },
+            { name: "빠다", body: "https://i.imgur.com/VSPomTp.png", face: "https://i.imgur.com/tbn0MA4.png", faceRect: { "x": 14.9, "y": 10.2, "w": 22.5, "h": 14.1 } },
+            { name: "부엉", body: "https://i.imgur.com/3wOR5DQ.png", face: "https://i.imgur.com/JqPL4kE.png", faceRect: { "x": 10, "y": 21.5, "w": 25.1, "h": 13.9 } },
+            { name: "폼식", body: "https://i.imgur.com/xNhFh58.png", face: "https://i.imgur.com/DZPqRtJ.png", faceRect: { "x": 15.2, "y": 19, "w": 19.6, "h": 14.2 } }
+        ];
 
-    return (
-        <div className="relative inline-block" style={{ width: size, height: size }}>
-            <svg viewBox="0 0 50 50" className="w-full h-full drop-shadow-xl overflow-visible">
-                <defs>
-                    <filter id={filterId}>
-                        <feFlood floodColor={bodyColor} result="flood" />
-                        <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
-                        <feBlend in="colored" in2="SourceGraphic" mode="multiply" />
-                    </filter>
-                </defs>
-                <g transform="translate(0, 0)">
-                    <g filter={`url(#${filterId})`}>
-                        <image href={bodyData.body} x="0" y="0" width="50" height="50" preserveAspectRatio="xMidYMid meet" />
-                    </g>
-                    <image 
-                        href={faceImg} 
-                        x={rect.x} 
-                        y={rect.y} 
-                        width={rect.w} 
-                        height={rect.h} 
-                        preserveAspectRatio="xMidYMid meet" 
-                    />
-                </g>
-            </svg>
-        </div>
-    );
-};
+        // --- Components ---
+        const CharacterRenderer = ({ genes, stage, size = 200, id }) => {
+            if (!genes || typeof genes.bodyIndex === 'undefined') return <div className="text-xs text-red-400">데이터 오류</div>;
 
-export default function App() {
-    const [myMonster, setMyMonster] = useState(null);
-    const [partnerMonster, setPartnerMonster] = useState(null);
-    const [importText, setImportText] = useState("");
-    const [timeLeft, setTimeLeft] = useState(0); 
-    const [timerType, setTimerType] = useState(null); 
-    const [isNaming, setIsNaming] = useState(false);
-    const [tempName, setTempName] = useState("");
-    const [showResetConfirm, setShowResetConfirm] = useState(false);
+            const isEgg = stage === "egg";
+            const isBaby = stage === "baby";
+            const dataSet = isBaby ? JUNIOR_DATA : ADULT_DATA;
 
-    // --- Recovery & Init ---
-    useEffect(() => {
-        const init = () => {
-            try {
-                const savedMonsterRaw = localStorage.getItem('decogochi_my_monster');
-                const savedTimerRaw = localStorage.getItem('decogochi_timer');
+            const bodyData = dataSet[genes.bodyIndex] || dataSet[0];
+            const faceData = dataSet[genes.faceIndex] || dataSet[0];
 
-                let current = null;
-                if (savedMonsterRaw) {
-                    current = JSON.parse(savedMonsterRaw);
-                    if (!current.genes || typeof current.genes.bodyIndex === 'undefined') throw new Error("Invalid");
-                    setMyMonster(current);
-                } else {
-                    const idx = Math.floor(Math.random() * ADULT_DATA.length);
-                    current = {
-                        name: ADULT_DATA[idx].name,
-                        stage: 'adult',
-                        genes: { bodyIndex: idx, faceIndex: idx, hue: Math.floor(Math.random() * 360), saturation: 80 }
-                    };
-                    setMyMonster(current);
+            const rect = bodyData.faceRect || { x: 10, y: 10, w: 30, h: 30 };
+            const faceImg = faceData.face;
+
+            const displaySaturation = isBaby ? genes.saturation * 0.2 : genes.saturation * 0.5;
+            const bodyColor = hsvToHex(genes.hue, displaySaturation, 95);
+            const filterId = `multiply-filter-${id}-${stage}`;
+
+            if (isEgg) {
+                return (
+                    <div className="relative flex items-center justify-center animate-bounce duration-[2000ms]" style={{ width: size, height: size }}>
+                        <img
+                            src="https://i.imgur.com/WFsA2pQ.png"
+                            alt="Egg"
+                            className="w-[70%] h-[70%] object-contain drop-shadow-md"
+                        />
+                    </div>
+                );
+            }
+
+            return (
+                <div className="relative flex items-center justify-center transition-transform duration-500 hover:scale-110" style={{ width: size, height: size }}>
+                    <svg viewBox="0 0 50 50" className="w-full h-full drop-shadow-2xl overflow-visible">
+                        <defs>
+                            <filter id={filterId}>
+                                <feFlood floodColor={bodyColor} result="flood" />
+                                <feComposite in="flood" in2="SourceAlpha" operator="in" result="colored" />
+                                <feBlend in="colored" in2="SourceGraphic" mode="multiply" />
+                            </filter>
+                        </defs>
+                        <g filter={`url(#${filterId})`}>
+                            <image href={bodyData.body} x="0" y="0" width="50" height="50" preserveAspectRatio="xMidYMid meet" />
+                        </g>
+                        <image
+                            href={faceImg}
+                            x={rect.x}
+                            y={rect.y}
+                            width={rect.w}
+                            height={rect.h}
+                            preserveAspectRatio="xMidYMid meet"
+                        />
+                    </svg>
+                </div>
+            );
+        };
+
+        function App() {
+            const [myMonster, setMyMonster] = useState(null);
+            const [partnerMonster, setPartnerMonster] = useState(null);
+            const [importText, setImportText] = useState("");
+            const [timeLeft, setTimeLeft] = useState(0);
+            const [timerType, setTimerType] = useState(null);
+            const [isNaming, setIsNaming] = useState(false);
+            const [tempName, setTempName] = useState("");
+            const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+            useEffect(() => {
+                const init = () => {
+                    try {
+                        const savedMonsterRaw = localStorage.getItem('decogochi_my_monster');
+                        const savedTimerRaw = localStorage.getItem('decogochi_timer');
+
+                        let current = null;
+                        if (savedMonsterRaw) {
+                            current = JSON.parse(savedMonsterRaw);
+                            setMyMonster(current);
+                        } else {
+                            const idx = Math.floor(Math.random() * ADULT_DATA.length);
+                            current = {
+                                name: ADULT_DATA[idx].name,
+                                stage: 'adult',
+                                genes: { bodyIndex: idx, faceIndex: idx, hue: Math.floor(Math.random() * 360), saturation: 80 }
+                            };
+                            setMyMonster(current);
+                        }
+
+                        if (savedTimerRaw) {
+                            const { endTime, type } = JSON.parse(savedTimerRaw);
+                            const diff = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+                            if (diff > 0) {
+                                setTimerType(type);
+                                setTimeLeft(diff);
+                            } else {
+                                setTimerType(type);
+                                setTimeLeft(0);
+                            }
+                        }
+                    } catch (e) {
+                        localStorage.clear();
+                        window.location.reload();
+                    }
+                };
+                init();
+            }, []);
+
+            useEffect(() => {
+                if (myMonster) {
+                    localStorage.setItem('decogochi_my_monster', JSON.stringify(myMonster));
                 }
+            }, [myMonster]);
 
-                if (savedTimerRaw) {
-                    const { endTime, type } = JSON.parse(savedTimerRaw);
-                    const diff = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
-                    setTimerType(type);
-                    setTimeLeft(diff);
+            useEffect(() => {
+                let interval;
+                if (timerType && timeLeft > 0) {
+                    interval = setInterval(() => {
+                        setTimeLeft(prev => {
+                            if (prev <= 1) {
+                                clearInterval(interval);
+                                localStorage.removeItem('decogochi_timer');
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
                 }
-            } catch (e) {
+                return () => clearInterval(interval);
+            }, [timerType, timeLeft]);
+
+            const handleReset = () => {
                 localStorage.clear();
                 window.location.reload();
-            }
-        };
-        init();
-    }, []);
-
-    // Auto-save
-    useEffect(() => {
-        if (myMonster) {
-            localStorage.setItem('decogochi_my_monster', JSON.stringify(myMonster));
-        }
-    }, [myMonster]);
-
-    // Timer Loop
-    useEffect(() => {
-        let interval;
-        if (timerType && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        localStorage.removeItem('decogochi_timer');
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [timerType, timeLeft > 0]);
-
-    const handleReset = () => {
-        localStorage.clear();
-        window.location.reload();
-    };
-
-    const exportData = () => {
-        try {
-            const data = btoa(unescape(encodeURIComponent(JSON.stringify(myMonster))));
-            const textArea = document.createElement("textarea");
-            textArea.value = data;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            alert("데이터가 복사되었습니다!");
-        } catch (err) { alert("오류 발생"); }
-    };
-
-    const importData = () => {
-        try {
-            const decoded = JSON.parse(decodeURIComponent(escape(atob(importText))));
-            if (decoded.stage !== 'adult') return alert("성체만 가능합니다.");
-            setPartnerMonster(decoded);
-            setImportText("");
-        } catch { alert("잘못된 데이터입니다."); }
-    };
-
-    const confirmBreeding = () => {
-        if (!tempName.trim()) return;
-        const p1 = myMonster.genes;
-        const p2 = partnerMonster.genes;
-        const duration = 300; 
-        const endTime = Date.now() + (duration * 1000);
-
-        setMyMonster({ name: tempName, stage: 'egg', genes: p1, parents: [p1, p2] });
-        setPartnerMonster(null);
-        setTimerType('hatch');
-        setTimeLeft(duration);
-        localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'hatch' }));
-        setIsNaming(false);
-        setTempName("");
-    };
-
-    const handleHatch = () => {
-        setMyMonster(prev => {
-            if (!prev || !prev.parents) return prev;
-            const [p1, p2] = prev.parents;
-            const babyGenes = {
-                bodyIndex: Math.random() > 0.5 ? p1.bodyIndex : p2.bodyIndex,
-                faceIndex: Math.random() > 0.5 ? p1.faceIndex : p2.faceIndex,
-                hue: Math.floor(Math.random() * 360),
-                saturation: 80,
             };
-            const duration = 600; 
-            const endTime = Date.now() + (duration * 1000);
-            setTimerType('grow');
-            setTimeLeft(duration);
-            localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'grow' }));
-            return { ...prev, stage: 'baby', genes: babyGenes };
-        });
-    };
 
-    const handleGrow = () => {
-        setMyMonster(prev => {
-            if (!prev || !prev.parents) return prev;
-            const [p1, p2] = prev.parents;
-            const adultGenes = { ...prev.genes };
-            ['bodyIndex', 'faceIndex'].forEach(key => {
-                if (Math.random() > 0.5) {
-                    adultGenes[key] = Math.random() > 0.5 ? p1[key] : p2[key];
-                }
-            });
-            if (Math.random() > 0.5) adultGenes.hue = Math.floor(Math.random() * 360);
-            setTimerType(null);
-            setTimeLeft(0);
-            localStorage.removeItem('decogochi_timer');
-            return { ...prev, stage: 'adult', genes: adultGenes, name: prev.name };
-        });
-    };
+            const exportData = () => {
+                try {
+                    const data = btoa(unescape(encodeURIComponent(JSON.stringify(myMonster))));
+                    const textArea = document.createElement("textarea");
+                    textArea.value = data;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                } catch (err) { }
+            };
 
-    if (!myMonster) return <div className="flex h-screen items-center justify-center text-slate-400 font-bold">로딩 중...</div>;
+            const importData = () => {
+                try {
+                    if(!importText) return;
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(importText))));
+                    if (decoded.stage !== 'adult') return;
+                    setPartnerMonster(decoded);
+                    setImportText("");
+                } catch { }
+            };
 
-    return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-center p-6 font-sans select-none">
-            <div className="w-full max-w-md bg-white rounded-[3rem] p-8 shadow-xl border border-slate-200 relative overflow-hidden">
-                
-                {/* 초기화 버튼 */}
-                <button onClick={() => setShowResetConfirm(true)} className="absolute top-8 right-8 text-slate-300 hover:text-rose-400 transition-colors z-20">
-                    <RotateCcw size={20} />
-                </button>
+            const confirmBreeding = () => {
+                if (!tempName.trim()) return;
+                const p1 = myMonster.genes;
+                const p2 = partnerMonster.genes;
+                const duration = 300;
+                const endTime = Date.now() + (duration * 1000);
 
-                <div className="text-center mb-10">
-                    <h1 className="text-2xl font-black text-blue-600 flex items-center justify-center gap-2">
-                        <Sparkles size="22" className="fill-blue-600" /> 디코고치
-                    </h1>
-                    <p className="text-slate-400 text-[10px] uppercase font-black tracking-widest mt-1">Digital Companion</p>
-                </div>
+                setMyMonster({ name: tempName, stage: 'egg', genes: p1, parents: [p1, p2] });
+                setPartnerMonster(null);
+                setTimerType('hatch');
+                setTimeLeft(duration);
+                localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'hatch' }));
+                setIsNaming(false);
+                setTempName("");
+            };
 
-                <div className="flex flex-col items-center justify-center py-12 bg-slate-50/80 rounded-[2.5rem] mb-8 relative border border-slate-100 shadow-inner min-h-[340px]">
-                    <CharacterRenderer genes={myMonster.genes} stage={myMonster.stage} id="main" size={220} />
-                    <div className="mt-8 text-center">
-                        <h2 className="text-2xl font-black text-slate-800">{myMonster.name}</h2>
-                        <div className="flex items-center justify-center gap-2 mt-3">
-                            <span className={`text-[10px] px-3 py-1 rounded-full font-black border ${
-                                myMonster.stage === 'adult' ? 'border-blue-500 text-blue-500 bg-blue-50' :
-                                myMonster.stage === 'baby' ? 'border-green-500 text-green-500 bg-green-50' : 'border-amber-500 text-amber-500 bg-amber-50'
-                            }`}>
-                                {myMonster.stage.toUpperCase()}
-                            </span>
-                            {timerType && (
-                                <span className={`text-[10px] px-3 py-1 rounded-full font-black flex items-center gap-1 ${timeLeft === 0 ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-600'}`}>
-                                    <Clock size={10} /> {timeLeft > 0 ? formatTime(timeLeft) : "준비 완료!"}
-                                </span>
-                            )}
-                        </div>
-                    </div>
+            const handleHatch = () => {
+                setMyMonster(prev => {
+                    if (!prev || !prev.parents) return prev;
+                    const [p1, p2] = prev.parents;
+                    const babyGenes = {
+                        bodyIndex: Math.random() > 0.5 ? p1.bodyIndex : p2.bodyIndex,
+                        faceIndex: Math.random() > 0.5 ? p1.faceIndex : p2.faceIndex,
+                        hue: Math.floor(Math.random() * 360),
+                        saturation: 80,
+                    };
+                    const duration = 600;
+                    const endTime = Date.now() + (duration * 1000);
+                    setTimerType('grow');
+                    setTimeLeft(duration);
+                    localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'grow' }));
+                    return { ...prev, stage: 'baby', genes: babyGenes };
+                });
+            };
 
-                    {timerType === 'hatch' && timeLeft === 0 && (
-                        <button onClick={handleHatch} className="absolute -bottom-5 bg-amber-500 hover:bg-amber-400 text-white font-black px-8 py-3 rounded-2xl shadow-lg transition-all active:scale-95 z-10">
-                            부화하기!
-                        </button>
-                    )}
-                    {timerType === 'grow' && timeLeft === 0 && (
-                        <button onClick={handleGrow} className="absolute -bottom-5 bg-green-500 hover:bg-green-400 text-white font-black px-8 py-3 rounded-2xl shadow-lg transition-all active:scale-95 z-10">
-                            성장하기!
-                        </button>
-                    )}
-                </div>
+            const handleGrow = () => {
+                setMyMonster(prev => {
+                    if (!prev || !prev.parents) return prev;
+                    const [p1, p2] = prev.parents;
+                    const adultGenes = { ...prev.genes };
+                    ['bodyIndex', 'faceIndex'].forEach(key => {
+                        if (Math.random() > 0.5) {
+                            adultGenes[key] = Math.random() > 0.5 ? p1[key] : p2[key];
+                        }
+                    });
+                    if (Math.random() > 0.5) adultGenes.hue = Math.floor(Math.random() * 360);
+                    setTimerType(null);
+                    setTimeLeft(0);
+                    localStorage.removeItem('decogochi_timer');
+                    return { ...prev, stage: 'adult', genes: adultGenes };
+                });
+            };
 
-                <div className="space-y-4">
-                    {myMonster.stage === 'adult' && !timerType && (
-                        <>
-                            {partnerMonster ? (
-                                <div className="bg-blue-50 border border-blue-100 p-4 rounded-[2rem] flex items-center gap-4">
-                                    <div className="bg-white p-2 rounded-2xl shadow-sm">
-                                        <CharacterRenderer genes={partnerMonster.genes} stage="adult" size={60} id="partner" />
-                                    </div>
-                                    <div className="flex-1 overflow-hidden">
-                                        <p className="text-[9px] text-blue-500 font-black uppercase mb-0.5">Partner Found</p>
-                                        <p className="font-bold text-slate-700 truncate">{partnerMonster.name}</p>
-                                    </div>
-                                    <button onClick={() => setIsNaming(true)} className="bg-blue-600 hover:bg-blue-500 text-white p-3.5 rounded-2xl shadow-md transition-all active:scale-90">
-                                        <Star size={20} fill="white" />
-                                    </button>
+            if (!myMonster) return null;
+
+            return (
+                <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 text-slate-900">
+                    <div className="w-full max-w-sm bg-white rounded-[3rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 relative">
+                        
+                        {/* Top Bar */}
+                        <div className="flex justify-between items-center mb-6 px-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
+                                    <Icon name="Sparkles" size={16} className="text-white fill-current" />
                                 </div>
-                            ) : (
-                                <div className="flex gap-2 bg-slate-100 p-1.5 rounded-[1.8rem]">
-                                    <input type="text" value={importText} onChange={(e) => setImportText(e.target.value)} placeholder="친구 코드 입력..." className="flex-1 bg-transparent border-none px-4 py-3 text-xs focus:outline-none placeholder:text-slate-400 font-medium" />
-                                    <button onClick={importData} className="bg-white text-slate-600 hover:text-blue-600 px-4 rounded-2xl shadow-sm transition-all active:scale-95 font-black text-xs">
-                                        <LogIn size={18} />
-                                    </button>
-                                </div>
-                            )}
-                            <div className="flex gap-3 mt-4">
-                                <button onClick={exportData} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-[1.5rem] text-xs font-black flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
-                                    <Share2 size={14} /> 데이터 내보내기
-                                </button>
+                                <h1 className="text-xl font-black text-slate-800 tracking-tight">디코고치</h1>
                             </div>
-                        </>
-                    )}
-                    {timerType && timeLeft > 0 && (
-                        <div className="text-center p-5 bg-slate-100 rounded-[2rem] border border-slate-200">
-                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.1em] mb-1">
-                                {timerType === 'hatch' ? "부화 대기 중" : "최종 성장 대기 중"}
-                            </p>
-                            <p className="text-xl font-black text-blue-600">{formatTime(timeLeft)}</p>
+                            <button 
+                                onClick={() => setShowResetConfirm(true)} 
+                                className="p-2 text-slate-300 hover:text-rose-400 transition-colors bg-slate-50 rounded-full"
+                            >
+                                <Icon name="RotateCcw" size={18} />
+                            </button>
                         </div>
-                    )}
-                </div>
-            </div>
 
-            {/* 초기화 확인 모달 */}
-            {showResetConfirm && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-                    <div className="bg-white w-full max-w-xs p-8 rounded-[3rem] shadow-2xl text-center">
-                        <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
-                            <Trash2 size={32} />
+                        {/* Display Screen */}
+                        <div className="relative aspect-square bg-slate-50 rounded-[2.5rem] flex flex-col items-center justify-center mb-6 border border-slate-100 shadow-inner overflow-hidden">
+                            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#475569 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                            
+                            <CharacterRenderer genes={myMonster.genes} stage={myMonster.stage} id="main" size={240} />
+                            
+                            <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1">
+                                <h2 className="text-xl font-black text-slate-800 tracking-tight">{myMonster.name}</h2>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                                        myMonster.stage === 'adult' ? 'bg-blue-100 text-blue-600' :
+                                        myMonster.stage === 'baby' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'
+                                    }`}>
+                                        {myMonster.stage}
+                                    </span>
+                                    {timerType && timeLeft > 0 && (
+                                        <div className="flex items-center gap-1 px-2.5 py-0.5 bg-slate-200 text-slate-600 rounded-full text-[9px] font-bold">
+                                            <Icon name="Clock" size={10} /> {formatTime(timeLeft)}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {timerType && timeLeft === 0 && (
+                                <button 
+                                    onClick={timerType === 'hatch' ? handleHatch : handleGrow}
+                                    className="absolute inset-0 bg-white/20 backdrop-blur-[2px] flex items-center justify-center transition-all group"
+                                >
+                                    <div className="bg-blue-600 text-white font-black px-6 py-3 rounded-2xl shadow-xl transform group-hover:scale-105 active:scale-95 transition-all">
+                                        {timerType === 'hatch' ? '부화하기!' : '성장하기!'}
+                                    </div>
+                                </button>
+                            )}
                         </div>
-                        <h3 className="text-xl font-black mb-2 text-slate-800">데이터 초기화</h3>
-                        <p className="text-slate-500 text-sm mb-8 leading-relaxed">정말로 모든 데이터를 삭제하고<br/>처음부터 다시 시작할까요?</p>
-                        <div className="flex gap-2">
-                            <button onClick={() => setShowResetConfirm(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl text-xs font-black">취소</button>
-                            <button onClick={handleReset} className="flex-1 bg-rose-500 text-white py-4 rounded-2xl text-xs font-black shadow-lg shadow-rose-100">초기화</button>
+
+                        {/* Actions Area */}
+                        <div className="space-y-3">
+                            {myMonster.stage === 'adult' && !timerType && (
+                                <>
+                                    {partnerMonster ? (
+                                        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 flex items-center gap-3 animate-in fade-in zoom-in">
+                                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden">
+                                                <CharacterRenderer genes={partnerMonster.genes} stage="adult" size={50} id="partner" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[10px] text-blue-500 font-bold uppercase leading-none mb-1">Partner</p>
+                                                <p className="font-bold text-slate-700 truncate text-sm">{partnerMonster.name}</p>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <button onClick={() => setPartnerMonster(null)} className="p-2 text-slate-400 hover:text-slate-600">
+                                                    <Icon name="X" size={18} />
+                                                </button>
+                                                <button onClick={() => setIsNaming(true)} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-blue-100 active:scale-90 transition-transform">
+                                                    <Icon name="Star" size={18} className="fill-current" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex bg-slate-100 rounded-2xl p-1 items-center">
+                                            <input 
+                                                type="text" 
+                                                value={importText} 
+                                                onChange={(e) => setImportText(e.target.value)} 
+                                                placeholder="친구 코드를 입력하세요" 
+                                                className="flex-1 bg-transparent border-none px-4 py-3 text-sm focus:outline-none placeholder:text-slate-400 font-semibold"
+                                            />
+                                            <button onClick={importData} className="bg-white text-slate-600 hover:text-blue-600 p-2.5 rounded-xl shadow-sm active:scale-95 transition-all">
+                                                <Icon name="LogIn" size={18} />
+                                            </button>
+                                        </div>
+                                    )}
+                                    
+                                    <button onClick={exportData} className="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all">
+                                        <Icon name="Share2" size={16} /> 데이터 내보내기 (복사)
+                                    </button>
+                                </>
+                            )}
+
+                            {timerType && timeLeft > 0 && (
+                                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-center">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">
+                                        {timerType === 'hatch' ? "Hatching Process" : "Growing Process"}
+                                    </p>
+                                    <div className="text-2xl font-black text-blue-600 tabular-nums">
+                                        {formatTime(timeLeft)}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
-            )}
 
-            {/* 이름 짓기 모달 */}
-            {isNaming && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-                    <div className="bg-white w-full max-w-xs p-8 rounded-[3rem] shadow-2xl text-center border border-slate-100">
-                        <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-100">
-                            <img src="https://i.imgur.com/WFsA2pQ.png" alt="New Egg" className="w-16 h-16 object-contain" />
+                    {/* Modals */}
+                    {showResetConfirm && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 z-50">
+                            <div className="bg-white w-full max-w-xs p-8 rounded-[2.5rem] shadow-2xl text-center">
+                                <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-rose-500">
+                                    <Icon name="Trash2" size={28} />
+                                </div>
+                                <h3 className="text-xl font-black text-slate-800 mb-2">데이터 초기화</h3>
+                                <p className="text-slate-500 text-sm mb-8 leading-relaxed">정말로 처음부터 다시<br/>시작하시겠습니까?</p>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setShowResetConfirm(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-xl text-xs font-black">취소</button>
+                                    <button onClick={handleReset} className="flex-1 bg-rose-500 text-white py-4 rounded-xl text-xs font-black shadow-lg shadow-rose-100">초기화</button>
+                                </div>
+                            </div>
                         </div>
-                        <h3 className="text-xl font-black mb-6 text-slate-800">알의 이름 짓기</h3>
-                        <input autoFocus type="text" maxLength={10} value={tempName} onChange={(e) => setTempName(e.target.value)} className="w-full bg-slate-100 border-none rounded-2xl px-4 py-4 text-center mb-6 focus:ring-2 focus:ring-blue-500 transition-all font-bold" placeholder="이름을 입력하세요" />
-                        <div className="flex gap-2">
-                            <button onClick={() => setIsNaming(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl text-xs font-black">취소</button>
-                            <button onClick={confirmBreeding} className="flex-1 bg-blue-600 text-white py-4 rounded-2xl text-xs font-black shadow-lg shadow-blue-200">알 만들기</button>
+                    )}
+
+                    {isNaming && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 z-50">
+                            <div className="bg-white w-full max-w-xs p-8 rounded-[2.5rem] shadow-2xl text-center border border-slate-100">
+                                <div className="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-blue-100">
+                                    <img src="https://i.imgur.com/WFsA2pQ.png" alt="New Egg" className="w-16 h-16 object-contain animate-pulse" />
+                                </div>
+                                <h3 className="text-xl font-black mb-6 text-slate-800">알의 이름 짓기</h3>
+                                <input 
+                                    autoFocus 
+                                    type="text" 
+                                    maxLength={10} 
+                                    value={tempName} 
+                                    onChange={(e) => setTempName(e.target.value)} 
+                                    className="w-full bg-slate-100 border-none rounded-xl px-4 py-4 text-center mb-6 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-lg" 
+                                    placeholder="이름 입력" 
+                                />
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsNaming(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-xl text-xs font-black">취소</button>
+                                    <button onClick={confirmBreeding} className="flex-1 bg-blue-600 text-white py-4 rounded-xl text-xs font-black shadow-lg shadow-blue-100">교배 시작!</button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
-            )}
-        </div>
-    );
-}
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
