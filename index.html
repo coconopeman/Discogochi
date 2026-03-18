@@ -29,7 +29,7 @@
             ChevronRight: (props) => <i data-lucide="chevron-right" {...props}></i>
         };
 
-        // --- 데이터 정의 (Canvas 코드 복사) ---
+        // --- 데이터 정의 ---
         const JUNIOR_DATA = [
             { name: "갈대", body: "https://i.imgur.com/kkJcH4l.png", face: "https://i.imgur.com/CjyNaZH.png", faceOffset: { x: 0.2, y: -1.5, scale: 1 } },
             { name: "더치", body: "https://i.imgur.com/DA5yEFP.png", face: "https://i.imgur.com/cq8lMXV.png", faceOffset: { x: 0.2, y: 1.9, scale: 1 } },
@@ -139,10 +139,13 @@
             const [isNaming, setIsNaming] = React.useState(false);
             const [tempName, setTempName] = React.useState("");
 
+            // 데이터 초기 로드 및 타이머 복구
             React.useEffect(() => {
-                const saved = localStorage.getItem('decogochi_my_monster');
-                if (saved) {
-                    setMyMonster(JSON.parse(saved));
+                const savedMonster = localStorage.getItem('decogochi_my_monster');
+                const savedTimer = localStorage.getItem('decogochi_timer');
+
+                if (savedMonster) {
+                    setMyMonster(JSON.parse(savedMonster));
                 } else {
                     const idx = Math.floor(Math.random() * ADULT_DATA.length);
                     const initial = {
@@ -157,8 +160,23 @@
                     };
                     setMyMonster(initial);
                 }
+
+                if (savedTimer) {
+                    const { endTime, type } = JSON.parse(savedTimer);
+                    const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+                    if (remaining > 0) {
+                        setTimeLeft(remaining);
+                        setTimerType(type);
+                    } else {
+                        // 시간이 지났으면 0으로 설정하여 버튼 노출 유도
+                        setTimeLeft(0);
+                        setTimerType(type);
+                        localStorage.removeItem('decogochi_timer');
+                    }
+                }
             }, []);
 
+            // 몬스터 상태 저장
             React.useEffect(() => {
                 if (myMonster) {
                     localStorage.setItem('decogochi_my_monster', JSON.stringify(myMonster));
@@ -166,10 +184,18 @@
                 lucide.createIcons();
             }, [myMonster]);
 
+            // 타이머 카운트다운
             React.useEffect(() => {
                 if (timeLeft <= 0) return;
                 const timer = setInterval(() => {
-                    setTimeLeft(prev => prev - 1);
+                    setTimeLeft(prev => {
+                        if (prev <= 1) {
+                            clearInterval(timer);
+                            localStorage.removeItem('decogochi_timer');
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
                 }, 1000);
                 return () => clearInterval(timer);
             }, [timeLeft]);
@@ -219,10 +245,16 @@
                     genes: p1,
                     parents: [p1, p2]
                 };
+                
+                const duration = 300; // 5분
+                const endTime = Date.now() + (duration * 1000);
+                
                 setMyMonster(egg);
                 setPartnerMonster(null);
                 setTimerType('hatch');
-                setTimeLeft(300); // 5분
+                setTimeLeft(duration);
+                localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'hatch' }));
+                
                 setIsNaming(false);
                 setTempName("");
             };
@@ -235,9 +267,14 @@
                     hue: Math.floor(Math.random() * 360),
                     saturation: 80,
                 };
+                
+                const duration = 600; // 10분
+                const endTime = Date.now() + (duration * 1000);
+                
                 setMyMonster({ ...myMonster, stage: 'baby', genes: babyGenes, name: `${myMonster.name}` });
                 setTimerType('grow');
-                setTimeLeft(600); // 10분
+                setTimeLeft(duration);
+                localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'grow' }));
             };
 
             const handleGrow = () => {
@@ -246,9 +283,11 @@
                 Object.keys(adultGenes).forEach(trait => {
                     if (Math.random() > 0.5) adultGenes[trait] = Math.random() > 0.5 ? p1[trait] : p2[trait];
                 });
+                
                 setMyMonster({ ...myMonster, stage: 'adult', genes: adultGenes, name: ADULT_DATA[adultGenes.bodyIndex].name });
                 setTimerType(null);
                 setTimeLeft(0);
+                localStorage.removeItem('decogochi_timer');
             };
 
             if (!myMonster) return null;
@@ -274,9 +313,9 @@
                                     }`}>
                                         {myMonster.stage.toUpperCase()}
                                     </span>
-                                    {timeLeft > 0 && (
+                                    {(timeLeft > 0 || (timeLeft === 0 && timerType)) && (
                                         <span className="text-[10px] bg-slate-200 text-slate-600 px-3 py-1 rounded-full font-black flex items-center gap-1">
-                                            <Clock size="10" /> {formatTime(timeLeft)}
+                                            <Clock size={10} /> {formatTime(timeLeft)}
                                         </span>
                                     )}
                                 </div>
@@ -307,23 +346,23 @@
                                                 <p className="font-bold text-slate-700">{partnerMonster.name}</p>
                                             </div>
                                             <button onClick={() => setIsNaming(true)} className="bg-blue-600 hover:bg-blue-500 text-white p-3.5 rounded-2xl shadow-md transition-all active:scale-90">
-                                                <Star size="20" fill="white" />
+                                                <Star size={20} fill="white" />
                                             </button>
                                         </div>
                                     ) : (
                                         <div className="flex gap-2 bg-slate-100 p-1.5 rounded-[1.8rem]">
                                             <input type="text" value={importText} onChange={(e) => setImportText(e.target.value)} placeholder="친구 코드 입력..." className="flex-1 bg-transparent border-none rounded-2xl px-4 py-3 text-xs focus:outline-none placeholder:text-slate-400 font-medium" />
                                             <button onClick={importData} className="bg-white text-slate-600 hover:text-blue-600 px-4 rounded-2xl shadow-sm transition-all active:scale-95 font-black text-xs">
-                                                <LogIn size="18" />
+                                                <LogIn size={18} />
                                             </button>
                                         </div>
                                     )}
                                     <div className="flex gap-3 mt-4">
                                         <button onClick={exportData} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-[1.5rem] text-xs font-black flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
-                                            <Share2 size="14" /> 데이터 내보내기
+                                            <Share2 size={14} /> 데이터 내보내기
                                         </button>
                                         <button onClick={() => { if(confirm("내 캐릭터를 초기화하시겠습니까?")) { localStorage.clear(); window.location.reload(); } }} className="bg-slate-200 hover:bg-rose-100 text-slate-400 hover:text-rose-500 px-5 rounded-[1.5rem] transition-all">
-                                            <Trash2 size="16" />
+                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </>
