@@ -17,7 +17,7 @@
 
     <script type="text/babel">
         // Lucide 아이콘 컴포넌트 래퍼
-        const { Star, Egg, Sparkles, RefreshCw, Trash2, Share2, LogIn, Clock, ChevronRight } = {
+        const { Star, Egg, Sparkles, RefreshCw, Trash2, Share2, LogIn, Clock, ChevronRight, RotateCcw } = {
             Star: (props) => <i data-lucide="star" {...props}></i>,
             Egg: (props) => <i data-lucide="egg" {...props}></i>,
             Sparkles: (props) => <i data-lucide="sparkles" {...props}></i>,
@@ -26,7 +26,8 @@
             Share2: (props) => <i data-lucide="share-2" {...props}></i>,
             LogIn: (props) => <i data-lucide="log-in" {...props}></i>,
             Clock: (props) => <i data-lucide="clock" {...props}></i>,
-            ChevronRight: (props) => <i data-lucide="chevron-right" {...props}></i>
+            ChevronRight: (props) => <i data-lucide="chevron-right" {...props}></i>,
+            RotateCcw: (props) => <i data-lucide="rotate-ccw" {...props}></i>
         };
 
         // --- 데이터 정의 ---
@@ -44,7 +45,7 @@
 
         const ADULT_DATA = [
             { name: "갈대", body: "https://i.imgur.com/0eJ7nlh.png", face: "https://i.imgur.com/aA22ZF6.png", acc: "", faceOffset: {"x":-5.1,"y":1.4,"scale":1.2}, accOffset: {"x":0,"y":0,"scale":1} },
-            { name: "더치", body: "https://i.imgur.com/Urn822x.png", face: "https://i.imgur.com/RffUmzV.png", acc: "https://i.imgur.com/EU61ZUd.png", faceOffset: {"x":-0.5,"y":1.4,"scale":1.2}, accOffset: {"x":0,"y":0,"scale":1.0} },
+            { name: "더치", body: "https://i.imgur.com/Urn822x.png", face: "https://i.imgur.com/RffUmVz.png", acc: "https://i.imgur.com/EU61ZUd.png", faceOffset: {"x":-0.5,"y":1.4,"scale":1.2}, accOffset: {"x":0,"y":0,"scale":1.0} },
             { name: "뫄식", body: "https://i.imgur.com/r9ZNExr.png", face: "https://i.imgur.com/3Dhh0zf.png", acc: "", faceOffset: {"x":1.1,"y":0.9,"scale":1.6}, accOffset: {"x":0,"y":0,"scale":1} },
             { name: "병태", body: "https://i.imgur.com/yaBZRGJ.png", face: "https://i.imgur.com/O9mjZ2.png", acc: "", faceOffset: {"x":-0.5,"y":0.7,"scale":1.5}, accOffset: {"x":0,"y":0,"scale":1} },
             { name: "볼복", body: "https://i.imgur.com/zMSAP6x.png", face: "https://i.imgur.com/n7JCI43.png", acc: "", faceOffset: {"x":-0.9,"y":-2.4,"scale":1.5}, accOffset: {"x":0,"y":0,"scale":1} },
@@ -139,32 +140,39 @@
             const [isNaming, setIsNaming] = React.useState(false);
             const [tempName, setTempName] = React.useState("");
 
-            // 로드 시 복구 로직
+            // 초기 로드 및 복구
             React.useEffect(() => {
                 const savedMonster = localStorage.getItem('decogochi_my_monster');
                 const savedTimer = localStorage.getItem('decogochi_timer');
 
+                let currentMonster = null;
                 if (savedMonster) {
-                    setMyMonster(JSON.parse(savedMonster));
+                    currentMonster = JSON.parse(savedMonster);
+                    setMyMonster(currentMonster);
                 } else {
                     const idx = Math.floor(Math.random() * ADULT_DATA.length);
-                    setMyMonster({
+                    currentMonster = {
                         name: ADULT_DATA[idx].name,
                         stage: 'adult',
                         genes: { bodyIndex: idx, faceIndex: idx, hue: Math.floor(Math.random() * 360), saturation: 80 }
-                    });
+                    };
+                    setMyMonster(currentMonster);
                 }
 
+                // 타이머 복구 로직 강화
                 if (savedTimer) {
                     const { endTime, type } = JSON.parse(savedTimer);
                     const now = Date.now();
                     const diff = Math.max(0, Math.floor((endTime - now) / 1000));
                     setTimerType(type);
                     setTimeLeft(diff);
+                } else if (currentMonster && currentMonster.stage !== 'adult') {
+                    // 알이나 주니어인데 타이머가 없다면 즉시 버튼 노출 (먹통 방지)
+                    setTimerType(currentMonster.stage === 'egg' ? 'hatch' : 'grow');
+                    setTimeLeft(0);
                 }
             }, []);
 
-            // 몬스터 상태 영구 저장
             React.useEffect(() => {
                 if (myMonster) {
                     localStorage.setItem('decogochi_my_monster', JSON.stringify(myMonster));
@@ -172,7 +180,6 @@
                 lucide.createIcons();
             }, [myMonster]);
 
-            // 타이머 작동 로직
             React.useEffect(() => {
                 let interval;
                 if (timerType && timeLeft > 0) {
@@ -180,6 +187,7 @@
                         setTimeLeft(prev => {
                             if (prev <= 1) {
                                 clearInterval(interval);
+                                localStorage.removeItem('decogochi_timer'); // 시간 완료 시 제거
                                 return 0;
                             }
                             return prev - 1;
@@ -189,10 +197,11 @@
                 return () => clearInterval(interval);
             }, [timerType, timeLeft]);
 
-            const formatTime = (seconds) => {
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                return `${m}:${s < 10 ? '0' : ''}${s}`;
+            const resetGame = () => {
+                if(confirm("모든 데이터를 삭제하고 처음으로 되돌아가시겠습니까?")) {
+                    localStorage.clear();
+                    window.location.reload();
+                }
             };
 
             const exportData = () => {
@@ -203,28 +212,30 @@
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert("내 데이터가 복사되었습니다!");
+                alert("내 캐릭터 데이터가 클립보드에 복사되었습니다!");
             };
 
             const importData = () => {
                 try {
                     const decoded = JSON.parse(decodeURIComponent(escape(atob(importText))));
-                    if (decoded.stage !== 'adult') return alert("성체 데이터만 가능합니다.");
+                    if (decoded.stage !== 'adult') return alert("성체 데이터만 가져올 수 있습니다.");
                     setPartnerMonster(decoded);
                     setImportText("");
-                } catch { alert("잘못된 데이터입니다."); }
+                } catch { alert("유효하지 않은 데이터입니다."); }
             };
 
             const confirmBreeding = () => {
                 if (!tempName.trim()) return;
                 const p1 = myMonster.genes;
                 const p2 = partnerMonster.genes;
-                const endTime = Date.now() + (300 * 1000); // 5분 후
+                const duration = 300; // 5분
+                const endTime = Date.now() + (duration * 1000);
 
-                setMyMonster({ name: tempName, stage: 'egg', genes: p1, parents: [p1, p2] });
+                const newEgg = { name: tempName, stage: 'egg', genes: p1, parents: [p1, p2] };
+                setMyMonster(newEgg);
                 setPartnerMonster(null);
                 setTimerType('hatch');
-                setTimeLeft(300);
+                setTimeLeft(duration);
                 localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'hatch' }));
                 setIsNaming(false);
                 setTempName("");
@@ -238,11 +249,12 @@
                     hue: Math.floor(Math.random() * 360),
                     saturation: 80,
                 };
-                const endTime = Date.now() + (600 * 1000); // 10분 후
+                const duration = 600; // 10분
+                const endTime = Date.now() + (duration * 1000);
                 
                 setMyMonster({ ...myMonster, stage: 'baby', genes: babyGenes });
                 setTimerType('grow');
-                setTimeLeft(600);
+                setTimeLeft(duration);
                 localStorage.setItem('decogochi_timer', JSON.stringify({ endTime, type: 'grow' }));
             };
 
@@ -262,6 +274,12 @@
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-center p-6 font-sans select-none">
                     <div className="w-full max-w-md bg-white rounded-[3rem] p-8 shadow-xl border border-slate-200 relative overflow-hidden">
+                        
+                        {/* 초기화 버튼 (항상 노출) */}
+                        <button onClick={resetGame} className="absolute top-8 right-8 text-slate-300 hover:text-rose-400 transition-colors">
+                            <RotateCcw size={20} />
+                        </button>
+
                         <div className="text-center mb-10">
                             <h1 className="text-2xl font-black text-blue-600 flex items-center justify-center gap-2">
                                 <Sparkles size="22" className="fill-blue-600" /> 디코고치
@@ -327,9 +345,6 @@
                                     <div className="flex gap-3 mt-4">
                                         <button onClick={exportData} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-[1.5rem] text-xs font-black flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
                                             <Share2 size={14} /> 데이터 내보내기
-                                        </button>
-                                        <button onClick={() => { if(confirm("초기화하시겠습니까?")) { localStorage.clear(); window.location.reload(); } }} className="bg-slate-200 hover:bg-rose-100 text-slate-400 hover:text-rose-500 px-5 rounded-[1.5rem] transition-all">
-                                            <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </>
